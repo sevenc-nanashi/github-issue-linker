@@ -10,6 +10,13 @@ ja:
     success: |
       [%{name}（`@%{login}`）](https://github.com/%{login})のトークンを登録しました。
 
+  info:
+    text: |
+      **GitHub Issue Linker**
+      DiscordとGitHubのIssueを結びつけるBot。
+
+      [ソースコード](<https://github.com/sevenc-nanashi/github-issue-linker>)
+
 en:
   login:
     prompt: |
@@ -22,4 +29,9 @@ en:
     success: |
       Registered [%{name}（`@%{login}`）](https://github.com/%{login})'s token.
 
+  info:
+    text: |
+      **GitHub Issue Linker**
+      This bot links Discord and GitHub issues.
 
+      [Source](<https://github.com/sevenc-nanashi/github-issue-linker>)

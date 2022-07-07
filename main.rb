@@ -61,4 +61,10 @@ client.slash "login", "Register your PAT of GitHub", {} do |interaction|
   modal_interaction.post(I18n.t("login.success", login: user.login, name: user.name), ephemeral: true)
 end
 
+client.slash "info", "Show information about the bot", {} do |interaction|
+  I18n.locale = interaction.locale
+
+  interaction.post(I18n.t("info.text"), ephemeral: true)
+end
+
 client.run ENV["TOKEN"]
