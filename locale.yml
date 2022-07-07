@@ -1,0 +1,17 @@
+ja:
+  login:
+    title: トークンの登録
+    description: |
+      このBotを使用するにはGitHubのPersonal Access Token(PAT)を登録する必要があります。
+      [ここから発行し、下のボタンから登録して下さい。](https://github.com/settings/tokens/new)
+    register: 登録
+    modal_title: PATの登録
+    pat: PAT
+    failure: PATが無効です。
+    success: |
+      [%{name}（`@%{login}`）](https://github.com/%{login})のトークンが登録されました。
+
+en:
+  login:
+    invalid: Invalid PAT specified.
+
