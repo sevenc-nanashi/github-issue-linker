@@ -12,5 +12,14 @@ ja:
 
 en:
   login:
-    invalid: Invalid PAT specified.
+    prompt: |
+      You need to register a GitHub Personal Access Token(PAT) to use this bot.
+      [Generate a new PAT here](<https://github.com/settings/tokens/new>) and register it below.
+    register: Register
+    modal_title: Register PAT
+    pat: PAT
+    failure: Invalid PAT specified.
+    success: |
+      Registered [%{name}（`@%{login}`）](https://github.com/%{login})'s token.
+
 
