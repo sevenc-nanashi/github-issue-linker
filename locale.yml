@@ -7,9 +7,6 @@ ja:
     modal_title: PATの登録
     pat: PAT
     failure: PATが無効です。
-    already_registered: |
-      PATは既に登録されています。
-      登録を解除するには、`/logout`コマンドを実行してください。
     success: |
       [%{name}（`@%{login}`）](https://github.com/%{login})のトークンを登録しました。
 
