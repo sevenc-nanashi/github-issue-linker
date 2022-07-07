@@ -28,11 +28,7 @@ client.slash "login", "Register your PAT of GitHub", {} do |interaction|
   I18n.locale = interaction.locale
   nonce = SecureRandom.hex(16)
   interaction.post(
-    embed: Discorb::Embed.new(
-      ":inbox_tray: " + I18n.t("login.title"),
-      I18n.t("login.description"),
-      color: Discorb::Color[:gray],
-    ),
+    I18n.t("login.prompt"),
     components: [
       Discorb::Button.new(
         I18n.t("login.register"),
@@ -60,6 +56,7 @@ client.slash "login", "Register your PAT of GitHub", {} do |interaction|
   rescue Octokit::Unauthorized
     next interaction.post(I18n.t("login.invalid"), ephemeral: true)
   end
+  Pat.where(guild_id: interaction.guild.id).delete_all
   pat.save
   modal_interaction.post(I18n.t("login.success", login: user.login, name: user.name), ephemeral: true)
 end
