@@ -24,7 +24,7 @@ client.on(:message) do |message|
   end
 end
 
-client.slash "login", "Register your PAT of GitHub", {} do |interaction|
+client.slash("login", "Register your PAT of GitHub", {}, dm_permission: false, default_permission: Discorb::Permission.from_keys(:administrator)) do |interaction|
   I18n.locale = interaction.locale
   nonce = SecureRandom.hex(16)
   interaction.post(
@@ -61,8 +61,150 @@ client.slash "login", "Register your PAT of GitHub", {} do |interaction|
   modal_interaction.post(I18n.t("login.success", login: user.login, name: user.name), ephemeral: true)
 end
 
-client.slash "info", "Show information about the bot", {} do |interaction|
-  I18n.locale = interaction.locale
+client.slash_group "repo", "The repository settings", default_permission: Discorb::Permission.from_keys(:manage_webhooks), dm_permission: false do |group|
+  group.slash("list", "List all repositories", {}) do |interaction|
+    # @type var interaction: Discorb::CommandInteraction::ChatInputCommand
+    I18n.locale = interaction.locale
+
+    interaction.defer_source(ephemeral: true).wait
+    repos = Repo.where(guild_id: interaction.guild.id)
+    if repos.empty?
+      interaction.edit_original_message(
+        embed: Discorb::Embed.new(
+          I18n.t("repo.list.title"), I18n.t("repo.list.no_repos"),
+        ),
+      )
+      next
+    end
+    page = 0
+    max_pages = (repos.count / 10.0).ceil
+    nonce = SecureRandom.hex(16)
+
+    left = Discorb::Button.new(I18n.t("repo.list.left"), :primary, custom_id: nonce + ":left")
+    right = Discorb::Button.new(I18n.t("repo.list.right"), :primary, custom_id: nonce + ":right")
+    stop = Discorb::Button.new(I18n.t("repo.list.stop"), :danger, custom_id: nonce + ":stop")
+
+    loop do
+      left.disabled = page == 0
+      right.disabled = page == max_pages - 1
+      interaction.edit_original_message(
+        embed: Discorb::Embed.new(
+          I18n.t("repo.list.title"),
+          I18n.t("repo.list.description", count: repos.count, page: page + 1),
+          fields: repos.offset(page * 10).limit(10).map do |repo|
+            Discorb::Embed::Field.new(
+              repo.repo,
+              I18n.t(
+                "repo.list.text",
+                prefix: repo.prefix,
+                channel: client.channels[repo.channel_id]&.mention || I18n.t("repo.list.no_channel"),
+              )
+            )
+          end,
+        ),
+        components: [
+          [left, right, stop],
+        ],
+      ).wait
+      button_interaction = client.event_lock(:button_click, 30) { |i| i.custom_id.start_with?(nonce) }.wait
+      case button_interaction.custom_id.delete_prefix(nonce + ":")
+      when "left"
+        page -= 1
+      when "right"
+        page += 1
+      when "stop"
+        break
+      end
+      button_interaction.defer_update.wait
+    end
+    interaction.edit_original_message(components: []).wait
+  rescue Discorb::TimeoutError
+    interaction.edit_original_message(components: []).wait
+  end
+
+  group.slash(
+    "add", "Add a repository", {
+      "repo" => {
+        type: :string,
+        description: "The repository to add.",
+      },
+      "prefix" => {
+        type: :string,
+        length: 1..,
+        description: "The prefix to respond.",
+        optional: true,
+      },
+      "channel" => {
+        type: :channel,
+        channel_types: [Discorb::TextChannel],
+        description: "The channel to respond.",
+        optional: true,
+      },
+    },
+  ) do |interaction, repo_name, prefix, channel|
+    I18n.locale = interaction.locale
+
+    prefix ||= "#"
+    pat = Pat.find_by(guild_id: interaction.guild.id)
+    unless pat
+      interaction.post(I18n.t("repo.add.no_pat"), ephemeral: true)
+      next
+    end
+    interaction.defer_source(ephemeral: true).wait
+    repos = Repo.where(prefix: prefix, guild_id: interaction.guild.id).all.to_a
+    repos.filter! { |r| r.channel_id == channel.id } if channel
+
+    unless repos.empty?
+      interaction.post(I18n.t("repo.add.duplicate"), ephemeral: true)
+      next
+    end
+    begin
+      repo = pat.client.repo(repo_name)
+    rescue Octokit::Unauthorized
+      interaction.post(I18n.t("common.unauthorized"), ephemeral: true)
+      next
+    rescue Octokit::InvalidRepository
+      interaction.post(I18n.t("repo.add.invalid"), ephemeral: true)
+      next
+    rescue Octokit::NotFound
+      interaction.post(I18n.t("repo.add.not_found"), ephemeral: true)
+      next
+    end
+    Repo.create(repo: repo.full_name, prefix: prefix, channel_id: channel&.id, guild_id: interaction.guild.id)
+    interaction.post(I18n.t("repo.add.success"), ephemeral: true)
+  end
+
+  group.slash(
+    "remove", "Remove a repository", {
+      "repo" => {
+        type: :integer,
+        description: "The repository to remove.",
+        autocomplete: ->(interaction, query) {
+          I18n.locale = interaction.locale
+          repos = Repo.where(
+            Repo.arel_table[:repo].matches("%#{query}%"),
+            guild_id: interaction.guild.id,
+          )
+          repos.limit(25).each.map { |r|
+            [
+              "#{r.repo} (#{r.prefix}) @ #{r.channel_id ? "#" + client.channels[r.channel_id].name : I18n.t("repo.list.no_channel")}",
+              r.id,
+            ]
+          }
+        },
+      },
+    },
+  ) do |interaction, repo|
+    I18n.locale = interaction.locale
+
+    repo = Repo.find_by(id: repo, guild_id: interaction.guild.id)
+    next unless repo
+
+    repo.destroy
+    interaction.post(I18n.t("repo.remove.success"), ephemeral: true)
+  end
+end
+
 
   interaction.post(I18n.t("info.text"), ephemeral: true)
 end

@@ -11,3 +11,6 @@ class Pat < ActiveRecord::Base
     Octokit::Client.new(access_token: pat)
   end
 end
+
+class Repo < ActiveRecord::Base
+end

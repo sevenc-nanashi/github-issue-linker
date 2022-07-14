@@ -1,4 +1,7 @@
 ja:
+  common:
+    unauthorized:
+      PATが無効です。もう一度`/login`から登録して下さい。
   login:
     prompt: |
       このBotを使用するにはGitHubのPersonal Access Token(PAT)を登録する必要があります。
@@ -9,6 +12,39 @@ ja:
     failure: PATが無効です。
     success: |
       [%{name}（`@%{login}`）](https://github.com/%{login})のトークンを登録しました。
+
+  repo:
+    list:
+      title: リポジトリ一覧
+      description: |
+        %{count} 個のリポジトリが登録されています。現在%{page}ページ目を表示しています。
+      no_repos: |
+        リポジトリは登録されていません。
+      text: |
+        プレフィックス：`%{prefix}`（例：`%{prefix}1`）
+        チャンネル：%{channel}
+      no_channel: |
+        サーバー全体
+      left: |
+        ←
+      right: |
+        →
+      stop: |
+        終了
+
+    add:
+      no_pat: |
+        PATが登録されていません。PATを登録してからリポジトリを追加してください。
+      invalid: |
+        リポジトリの指定が無効です。`owner/repo`の形式で指定してください。
+      not_found: |
+        リポジトリが見つかりませんでした。プライベートリポジトリを登録する場合は、`repo`スコープを
+      success: |
+        リポジトリを追加しました。
+    
+    remove:
+      success: |
+        リポジトリを削除しました。
 
   info:
     text: |
