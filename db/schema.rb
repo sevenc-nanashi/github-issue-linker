@@ -10,10 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_07_07_130736) do
+ActiveRecord::Schema.define(version: 2022_07_14_134800) do
 
   create_table "pats", primary_key: "guild_id", id: :string, force: :cascade do |t|
     t.string "pat"
+    t.string "user_id"
   end
 
   create_table "repos", force: :cascade do |t|

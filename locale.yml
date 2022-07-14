@@ -47,11 +47,17 @@ ja:
         リポジトリを削除しました。
 
   info:
-    text: |
+    bot: |
       **GitHub Issue Linker**
       DiscordとGitHubのIssueを結びつけるBot。
 
       [ソースコード](<https://github.com/sevenc-nanashi/github-issue-linker>)
+    pat: |
+      **PATの情報**
+      登録者：<@%{discord_user}>
+      ユーザー：[%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
+
+      レートリミット：%{rl_remaining} / %{rl_limit}（%{rl_reset}にリセット）
 
 en:
   login:

@@ -50,7 +50,7 @@ client.slash("login", "Register your PAT of GitHub", {}, dm_permission: false, d
 
   modal_interaction.defer_source(ephemeral: true).wait
 
-  pat = Pat.new(pat: modal_interaction.contents["pat"], guild_id: interaction.guild.id)
+  pat = Pat.new(pat: modal_interaction.contents["pat"], guild_id: interaction.guild.id, user_id: interaction.user.id)
   begin
     user = pat.client.user
   rescue Octokit::Unauthorized
@@ -205,8 +205,39 @@ client.slash_group "repo", "The repository settings", default_permission: Discor
   end
 end
 
+client.slash_group "info", "Show information" do |group|
+  group.slash "bot", "Show information about the bot", {} do |interaction|
+    I18n.locale = interaction.locale
 
-  interaction.post(I18n.t("info.text"), ephemeral: true)
+    interaction.post(I18n.t("info.bot"), ephemeral: true)
+  end
+
+  group.slash "pat", "Show information about the PAT", {} do |interaction|
+    I18n.locale = interaction.locale
+
+    pat = Pat.find_by(guild_id: interaction.guild.id)
+    unless pat
+      interaction.post(I18n.t("info.no_pat"), ephemeral: true)
+      next
+    end
+
+    interaction.defer_source(ephemeral: true).wait
+    user = pat.client.user
+    rate_limit = pat.client.rate_limit
+
+    interaction.post(
+      I18n.t(
+        "info.pat",
+        discord_user: pat.user_id,
+        gh_user: user.name,
+        gh_login: user.login,
+        rl_remaining: rate_limit.remaining,
+        rl_limit: rate_limit.limit,
+        rl_reset: rate_limit.resets_at.to_df("R"),
+      ),
+      ephemeral: true,
+    )
+  end
 end
 
 client.run ENV["TOKEN"]
