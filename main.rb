@@ -18,6 +18,15 @@ def tr(text, **options)
   I18n.t(text, **options, default: nil) || I18n.t(text, locale: :en, **options)
 end
 
+def all_translations(key)
+  translations = I18n.available_locales.to_h { |l| [l, I18n.t(key, locale: l, default: nil)] }
+  translations[:default] = translations[:en]
+  translations[:en_us] = translations[:en]
+  translations.delete(:en)  # en doesn't work on discord
+  translations.compact!
+  translations
+end
+
 client.once :standby do
   puts "Logged in as #{client.user}"
 end
@@ -56,7 +65,7 @@ client.on(:message) do |message|
   message.reply embed: embed
 end
 
-client.slash("login", "Register your PAT of GitHub", {}, dm_permission: false, default_permission: Discorb::Permission.from_keys(:administrator)) do |interaction|
+client.slash("login", all_translations("login.description"), dm_permission: false, default_permission: Discorb::Permission.from_keys(:administrator)) do |interaction|
   I18n.locale = interaction.locale
   nonce = SecureRandom.hex(16)
   interaction.post(
@@ -94,8 +103,8 @@ client.slash("login", "Register your PAT of GitHub", {}, dm_permission: false, d
   modal_interaction.post(tr("login.success", login: user.login, name: user.name), ephemeral: true)
 end
 
-client.slash_group "repo", "The repository settings", default_permission: Discorb::Permission.from_keys(:manage_webhooks), dm_permission: false do |group|
-  group.slash("list", "List all repositories", {}) do |interaction|
+client.slash_group "repo", all_translations("repo.description"), default_permission: Discorb::Permission.from_keys(:manage_webhooks), dm_permission: false do |group|
+  group.slash("list", all_translations("repo.list.description"), {}) do |interaction|
     # @type var interaction: Discorb::CommandInteraction::ChatInputCommand
     I18n.locale = interaction.locale
 
@@ -123,7 +132,7 @@ client.slash_group "repo", "The repository settings", default_permission: Discor
       interaction.edit_original_message(
         embed: Discorb::Embed.new(
           tr("repo.list.title"),
-          tr("repo.list.description", count: repos.count, page: page + 1),
+          tr("repo.list.status", count: repos.count, page: page + 1),
           fields: repos.offset(page * 10).limit(10).map do |repo|
             Discorb::Embed::Field.new(
               repo.repo,
@@ -156,21 +165,21 @@ client.slash_group "repo", "The repository settings", default_permission: Discor
   end
 
   group.slash(
-    "add", "Add a repository", {
+    "add", all_translations("repo.add.description"), {
       "repo" => {
         type: :string,
-        description: "The repository to add.",
+        description: all_translations("repo.add.parameters.repo"),
       },
       "prefix" => {
         type: :string,
         length: 1..,
-        description: "The prefix to respond.",
+        description: all_translations("repo.add.parameters.prefix"),
         optional: true,
       },
       "channel" => {
         type: :channel,
         channel_types: [Discorb::TextChannel],
-        description: "The channel to respond.",
+        description: all_translations("repo.add.parameters.channel"),
         optional: true,
       },
     },
@@ -209,10 +218,10 @@ client.slash_group "repo", "The repository settings", default_permission: Discor
   end
 
   group.slash(
-    "remove", "Remove a repository", {
+    "remove", all_translations("repo.remove.description"), {
       "repo" => {
         type: :integer,
-        description: "The repository to remove.",
+        description: all_translations("repo.remove.parameters.repo"),
         autocomplete: ->(interaction, query) {
           I18n.locale = interaction.locale
           repos = Repo.where(
@@ -239,14 +248,14 @@ client.slash_group "repo", "The repository settings", default_permission: Discor
   end
 end
 
-client.slash_group "info", "Show information" do |group|
-  group.slash "bot", "Show information about the bot", {} do |interaction|
+client.slash_group "info", all_translations("info.description") do |group|
+  group.slash "bot", all_translations("info.bot.description"), {} do |interaction|
     I18n.locale = interaction.locale
 
-    interaction.post(tr("info.bot"), ephemeral: true)
+    interaction.post(tr("info.bot.text"), ephemeral: true)
   end
 
-  group.slash "pat", "Show information about the PAT", {} do |interaction|
+  group.slash "pat", all_translations("info.pat.description"), {} do |interaction|
     I18n.locale = interaction.locale
 
     pat = Pat.find_by(guild_id: interaction.guild.id)
@@ -261,7 +270,7 @@ client.slash_group "info", "Show information" do |group|
 
     interaction.post(
       tr(
-        "info.pat",
+        "info.pat.text",
         discord_user: pat.user_id,
         gh_user: user.name,
         gh_login: user.login,

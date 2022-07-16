@@ -2,7 +2,9 @@ ja:
   common:
     unauthorized:
       PATが無効です。もう一度`/login`から登録して下さい。
+
   login:
+    description: PATを登録します。
     prompt: |
       このBotを使用するにはGitHubのPersonal Access Token(PAT)を登録する必要があります。
       [ここから発行し、下のボタンから登録して下さい。](<https://github.com/settings/tokens/new>)
@@ -14,9 +16,11 @@ ja:
       [%{name}（`@%{login}`）](https://github.com/%{login})のトークンを登録しました。
 
   repo:
+    description: リポジトリの管理関連のコマンドです。
     list:
+      description: 登録されているリポジトリの一覧を表示します。
       title: リポジトリ一覧
-      description: |
+      status: |
         %{count} 個のリポジトリが登録されています。現在%{page}ページ目を表示しています。
       no_repos: |
         リポジトリは登録されていません。
@@ -33,6 +37,14 @@ ja:
         終了
 
     add:
+      description: リポジトリを登録します。
+      parameters:
+        repo:
+          登録するリポジトリ。`owner/repo`の形式で指定してください。
+        prefix:
+          反応するプレフィックス。
+        channel:
+          反応させるチャンネル。省略するとサーバー全体で反応します。
       no_pat: |
         PATが登録されていません。PATを登録してからリポジトリを追加してください。
       invalid: |
@@ -43,20 +55,29 @@ ja:
         リポジトリを追加しました。
     
     remove:
+      description: リポジトリの登録を解除します。
+      parameters:
+        repo:
+          登録を解除するリポジトリ。
       success: |
         リポジトリを削除しました。
 
   info:
-    bot: |
-      **GitHub Issue Linker**
-      DiscordとGitHubのIssueを結びつけるBot。
+    description: 情報を表示します。
+    bot:
+      description: Botに関する情報を表示します。
+      text: |
+        **GitHub Issue Linker**
+        DiscordとGitHubのIssueを結びつけるBot。
 
-      [ソースコード](<https://github.com/sevenc-nanashi/github-issue-linker>)
-    pat: |
-      **PATの情報**
-      登録者：<@%{discord_user}>
-      ユーザー：[%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
+        [ソースコード](<https://github.com/sevenc-nanashi/github-issue-linker>)
+    pat: 
+      description: PATに関する情報を表示します。
+      text: |
+        **PATの情報**
+        登録者：<@%{discord_user}>
+        ユーザー：[%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
 
-      レートリミット：%{rl_remaining} / %{rl_limit}（%{rl_reset}にリセット）
+        レートリミット：%{rl_remaining} / %{rl_limit}（%{rl_reset}にリセット）
     no_pat: |
       PATが登録されていません。

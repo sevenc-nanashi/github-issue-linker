@@ -1,8 +1,10 @@
 en:
   common:
     unauthorized:
-      PATが無効です。もう一度`/login`から登録して下さい。
+      Invalid PAT. Please register again from `/login` command.
+
   login:
+    description: Register PAT.
     prompt: |
       You need to register a GitHub Personal Access Token(PAT) to use this bot.
       [Generate a new PAT here](<https://github.com/settings/tokens/new>) and register it below.
@@ -14,9 +16,11 @@ en:
       Registered [%{name}（`@%{login}`）](https://github.com/%{login})'s token.
 
   repo:
+    description: Repository management commands.
     list:
+      description: List registered repositories.
       title: Registered Repositories
-      description:
+      status:
         one: 1 Repository registered.
         other: |
           %{count} Repositories registered.
@@ -35,6 +39,14 @@ en:
         Stop
 
     add:
+      description: Register repository.
+      parameters:
+        repo:
+          The repository to register. Should match `owner/repo` format.
+        prefix:
+          The prefix to respond.
+        channel:
+          The channel to respond. If omitted, it will respond to all channels.
       no_pat: |
         No PAT registered. Please register PAT first.
       invalid: |
@@ -45,20 +57,29 @@ en:
         Registered repository.
     
     remove:
+      description: Remove repository.
+      parameters:
+        repo:
+          The repository to remove.
       success: |
         Removed repository.
 
   info:
-    bot: |
-      **GitHub Issue Linker**
-      This bot links Discord and GitHub issues.
+    description: Show informations.
+    bot:
+      description: Show information about this bot.
+      text: |
+        **GitHub Issue Linker**
+        This bot links Discord and GitHub issues.
 
-      [Source](<https://github.com/sevenc-nanashi/github-issue-linker>)
-    pat: |
-      **PAT Information**
-      Owner: <@%{discord_user}>
-      User: [%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
+        [Source](<https://github.com/sevenc-nanashi/github-issue-linker>)
+    pat: 
+      description: Show information about PAT.
+      text: |
+        **PAT Information**
+        Owner: <@%{discord_user}>
+        User: [%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
 
-      Rate limit: %{rl_remaining} / %{rl_limit}(Reset: %{rl_reset})
+        Rate limit: %{rl_remaining} / %{rl_limit}(Reset: %{rl_reset})
     no_pat: |
       No PAT registered.
