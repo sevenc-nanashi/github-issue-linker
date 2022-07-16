@@ -58,7 +58,7 @@ client.on(:message) do |message|
   embed = Discorb::Embed.new(
     "",
     issues.map do |match, issue|
-      "[`#{match}` #{issue.title.truncate(20)}](#{issue.html_url})"
+      "[`#{match}` #{issue.title.truncate(50)}](#{issue.html_url})"
     end.join("\n")
   )
   next unless embed.description.present?
