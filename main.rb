@@ -13,6 +13,7 @@ repositories = Hash.new { |h, k| h[k] = [] }.merge(Repo.all.group_by(&:guild_id)
 pats = Pat.all.to_a.to_h { |pat| [pat.guild_id, pat] }
 I18n.load_path << Dir["locale/*.yml"]
 I18n.default_locale = :en
+I18n.enforce_available_locales = false
 
 def tr(text, **options)
   I18n.t(text, **options, default: nil) || I18n.t(text, locale: :en, **options)
