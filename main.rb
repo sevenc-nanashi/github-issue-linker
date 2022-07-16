@@ -54,6 +54,7 @@ client.on(:message) do |message|
     end
   end
   next if issues.empty?
+  issues.uniq!(&:first)
 
   embed = Discorb::Embed.new(
     "",
