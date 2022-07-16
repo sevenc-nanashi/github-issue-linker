@@ -20,6 +20,6 @@ gem "octokit", "~> 4.25"
 
 gem "faraday-retry", "~> 2.0"
 
-gem "i18n", "~> 1.10"
+gem "i18n", "~> 1.12"
 
 gem "standalone_migrations", "~> 7.1"

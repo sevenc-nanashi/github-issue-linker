@@ -1,0 +1,64 @@
+en:
+  common:
+    unauthorized:
+      PATが無効です。もう一度`/login`から登録して下さい。
+  login:
+    prompt: |
+      You need to register a GitHub Personal Access Token(PAT) to use this bot.
+      [Generate a new PAT here](<https://github.com/settings/tokens/new>) and register it below.
+    register: Register
+    modal_title: Register PAT
+    pat: PAT
+    failure: Invalid PAT specified.
+    success: |
+      Registered [%{name}（`@%{login}`）](https://github.com/%{login})'s token.
+
+  repo:
+    list:
+      title: Registered Repositories
+      description:
+        one: 1 Repository registered.
+        other: |
+          %{count} Repositories registered.
+      no_repos: |
+        No repositories registered.
+      text: |
+        Prefix: `%{prefix}`(ex: `%{prefix}1`)
+        Channel: %{channel}
+      no_channel: |
+        (Everywhere)
+      left: |
+        <
+      right: |
+        >
+      stop: |
+        Stop
+
+    add:
+      no_pat: |
+        No PAT registered. Please register PAT first.
+      invalid: |
+        Invalid repository. Please specify in `owner/repo` format.
+      not_found: |
+        Repository not found. If you want to register a private repository, please use PAT with `repo` scope.
+      success: |
+        Registered repository.
+    
+    remove:
+      success: |
+        Removed repository.
+
+  info:
+    bot: |
+      **GitHub Issue Linker**
+      This bot links Discord and GitHub issues.
+
+      [Source](<https://github.com/sevenc-nanashi/github-issue-linker>)
+    pat: |
+      **PAT Information**
+      Owner: <@%{discord_user}>
+      User: [%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
+
+      Rate limit: %{rl_remaining} / %{rl_limit}(Reset: %{rl_reset})
+    no_pat: |
+      No PAT registered.

@@ -184,7 +184,7 @@ DEPENDENCIES
   dotenv (~> 2.7)
   faraday-retry (~> 2.0)
   http (~> 5.0)
-  i18n (~> 1.10)
+  i18n (~> 1.12)
   octokit (~> 4.25)
   sqlite3 (~> 1.4)
   standalone_migrations (~> 7.1)

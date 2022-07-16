@@ -38,7 +38,7 @@ ja:
       invalid: |
         リポジトリの指定が無効です。`owner/repo`の形式で指定してください。
       not_found: |
-        リポジトリが見つかりませんでした。プライベートリポジトリを登録する場合は、`repo`スコープを
+        リポジトリが見つかりませんでした。プライベートリポジトリを登録する場合は、`repo`スコープを追加したPATを使用してください。
       success: |
         リポジトリを追加しました。
     
@@ -58,22 +58,5 @@ ja:
       ユーザー：[%{gh_user}（`@%{gh_login}`）](https://github.com/%{gh_login})
 
       レートリミット：%{rl_remaining} / %{rl_limit}（%{rl_reset}にリセット）
-
-en:
-  login:
-    prompt: |
-      You need to register a GitHub Personal Access Token(PAT) to use this bot.
-      [Generate a new PAT here](<https://github.com/settings/tokens/new>) and register it below.
-    register: Register
-    modal_title: Register PAT
-    pat: PAT
-    failure: Invalid PAT specified.
-    success: |
-      Registered [%{name}（`@%{login}`）](https://github.com/%{login})'s token.
-
-  info:
-    text: |
-      **GitHub Issue Linker**
-      This bot links Discord and GitHub issues.
-
-      [Source](<https://github.com/sevenc-nanashi/github-issue-linker>)
+    no_pat: |
+      PATが登録されていません。
