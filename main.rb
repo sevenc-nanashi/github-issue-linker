@@ -41,7 +41,7 @@ client.on(:message) do |message|
   issues = []
   catch :stop do
     channel_repos.each do |repo|
-      message.clean_content.scan(/\b#{repo.prefix}(\w+)/).each do |match|
+      message.clean_content.scan(/\b#{repo.prefix}(\w+)/) do |match|
         begin
           issue = pat.client.issue(repo.repo, match[0])
         rescue Octokit::Unauthorized, Octokit::TooManyRequests
@@ -58,7 +58,7 @@ client.on(:message) do |message|
   embed = Discorb::Embed.new(
     "",
     issues.map do |match, issue|
-      "[`#{match}` #{issue.title.truncate(20)}](#{issue.html_url})\n"
+      "[`#{match}` #{issue.title.truncate(20)}](#{issue.html_url})"
     end.join("\n")
   )
   next unless embed.description.present?
