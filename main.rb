@@ -9,6 +9,8 @@ require "i18n"
 require_relative "db/models"
 
 client = Discorb::Client.new
+repositories = Hash.new { |h, k| h[k] = [] }.merge(Repo.all.group_by(&:guild_id))
+pats = Pat.all.to_a.to_h { |pat| [pat.guild_id, pat] }
 I18n.load_path << Dir["locale.yml"]
 
 client.once :standby do
@@ -17,11 +19,36 @@ end
 
 client.on(:message) do |message|
   next if message.author.bot?
+  next unless pat = pats[message.guild.id]
 
-  message.content.scan(/\#\#(\d+)/) do
-    # @type var issue_num: Integer
-    next unless issue_num = Regexp.last_match[1].to_i
+  guild_repos = repositories[message.guild.id]
+  channel_repos = guild_repos.filter { |repo| repo.channel_id == message.channel.id or repo.channel_id.nil? }
+  issues = []
+  catch :stop do
+    channel_repos.each do |repo|
+      message.clean_content.scan(/\b#{repo.prefix}(\w+)/).each do |match|
+        begin
+          issue = pat.client.issue(repo.repo, match[0])
+        rescue Octokit::Unauthorized, Octokit::TooManyRequests
+          throw :stop
+        rescue Octokit::NotFound
+          next
+        end
+        issues << [Regexp.last_match[0], issue]
+      end
+    end
   end
+  next if issues.empty?
+
+  embed = Discorb::Embed.new(
+    "",
+    issues.map do |match, issue|
+      "[`#{match}` #{issue.title.truncate(20)}](#{issue.html_url})\n"
+    end.join("\n")
+  )
+  next unless embed.description.present?
+
+  message.reply embed: embed
 end
 
 client.slash("login", "Register your PAT of GitHub", {}, dm_permission: false, default_permission: Discorb::Permission.from_keys(:administrator)) do |interaction|
@@ -58,6 +85,7 @@ client.slash("login", "Register your PAT of GitHub", {}, dm_permission: false, d
   end
   Pat.where(guild_id: interaction.guild.id).delete_all
   pat.save
+  pats[interaction.guild.id] = pat
   modal_interaction.post(I18n.t("login.success", login: user.login, name: user.name), ephemeral: true)
 end
 
@@ -170,7 +198,8 @@ client.slash_group "repo", "The repository settings", default_permission: Discor
       interaction.post(I18n.t("repo.add.not_found"), ephemeral: true)
       next
     end
-    Repo.create(repo: repo.full_name, prefix: prefix, channel_id: channel&.id, guild_id: interaction.guild.id)
+    repo = Repo.create(repo: repo.full_name, prefix: prefix, channel_id: channel&.id, guild_id: interaction.guild.id)
+    repositories[interaction.guild.id] << repo
     interaction.post(I18n.t("repo.add.success"), ephemeral: true)
   end
 

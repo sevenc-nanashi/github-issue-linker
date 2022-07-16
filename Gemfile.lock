@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/discorb-lib/discorb
-  revision: 31ad06407a0bafdd461ba089004bb83d78097cbf
+  revision: cac5963f45e9d4e8628bc62fc7892130a5019099
   specs:
     discorb (0.18.1)
       async (~> 1.30.1)
