@@ -5,6 +5,7 @@ require "dotenv/load"
 require "octokit"
 require "securerandom"
 require "i18n"
+require "async/barrier"
 
 require_relative "db/models"
 
@@ -29,11 +30,7 @@ end
 client.on :standby do
   loop do
     sleep 10
-    client.update_presence(
-      Discorb::Activity.new(
-        "#{repositories.values.flatten.count} repositories and #{client.guilds.length} guilds", :watching
-      )
-    )
+    update_status
   end
 end
 
@@ -48,20 +45,20 @@ client.on(:message) do |message|
   guild_repos = repositories[message.guild.id]
   channel_repos = guild_repos.filter { |repo| repo.channel_id == message.channel.id or repo.channel_id.nil? }
   issues = []
-  catch :stop do
-    channel_repos.each do |repo|
-      message.clean_content.scan(/(#{repo.prefix}([0-9]+))/) do |match|
+  barrier = Async::Barrier.new
+  channel_repos.each do |repo|
+    message.clean_content.scan(/(#{repo.prefix}([0-9]+))/) do |match|
+      barrier.async do
         begin
           issue = pat.client.issue(repo.repo, match[1])
-        rescue Octokit::Unauthorized, Octokit::TooManyRequests
-          throw :stop
-        rescue Octokit::NotFound
+        rescue Octokit::Unauthorized, Octokit::TooManyRequests, Octokit::NotFound
           next
         end
         issues << [match[0], issue]
       end
     end
   end
+  barrier.wait
   next if issues.empty?
   issues.uniq!(&:first)
 
