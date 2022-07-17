@@ -5,11 +5,14 @@ require "dotenv/load"
 require "octokit"
 require "securerandom"
 require "i18n"
+require "http"
+require "yaml"
 require "async/barrier"
+require "active_support/core_ext/object/inclusion"
 
 require_relative "db/models"
 
-client = Discorb::Client.new
+client = Discorb::Client.new(logger: Logger.new(STDOUT))
 repositories = Hash.new { |h, k| h[k] = [] }.merge(Repo.all.group_by(&:guild_id))
 pats = Pat.all.to_a.to_h { |pat| [pat.guild_id, pat] }
 I18n::Backend::Simple.include(I18n::Backend::Fallbacks)
@@ -17,6 +20,9 @@ I18n.load_path << Dir["locale/*.yml"]
 I18n.default_locale = :en
 I18n.fallbacks = [:en]
 I18n.enforce_available_locales = false
+PREVIEW_RANGE = 2
+
+LANGUAGES = YAML.load(HTTP.get("https://raw.githubusercontent.com/github/linguist/master/lib/linguist/languages.yml"), symbolize_names: true)
 
 def all_translations(key)
   translations = I18n.available_locales.to_h { |l| [l, I18n.t(key, locale: l, default: nil)] }
@@ -29,8 +35,12 @@ end
 
 client.on :standby do
   loop do
-    sleep 10
-    update_status
+    sleep 60
+    client.update_presence(
+      Discorb::Activity.new(
+        "#{repositories.values.flatten.count} repositories and #{client.guilds.length} guilds", :watching
+      )
+    )
   end
 end
 
@@ -38,7 +48,7 @@ client.once :standby do
   puts "Logged in as #{client.user}"
 end
 
-client.on(:message) do |message|
+client.on :message do |message|
   next if message.author.bot?
   next unless pat = pats[message.guild.id]
 
@@ -71,6 +81,45 @@ client.on(:message) do |message|
   next unless embed.description.present?
 
   message.reply embed: embed
+end
+
+client.on :message do |message|
+  URI.extract(message.content, %w[http https]) do |url_str|
+    url = URI.parse(url_str)
+    next unless url.host == "github.com"
+    next unless url.path.split("/")[3].in? %w[tree blob]
+    next unless url.path.split("/").length >= 6
+    next unless line = url.fragment.match(/L([0-9]+)(?:-L([0-9]+))?/)
+
+    raw_url = url
+      .tap { |u| u.hostname = "raw.githubusercontent.com" }
+      .tap { |u| u.path = url.path.split("/").tap { |p| p.delete_at(3) }.join("/") }
+    headers = HTTP.head(raw_url).headers
+    next if headers["Content-Length"].to_i > 1024 * 1024 * 1024  # 1 MiB
+
+    content = HTTP.get(raw_url).body.to_s
+    line_start = line[1].to_i - 1
+    line_end = if line[2].present?
+        line[2].to_i - 1
+      else
+        line_start
+      end
+    line_range = line_start..line_end
+    lines = content.lines[[line_start - PREVIEW_RANGE, 0].max..line_end + PREVIEW_RANGE]
+    digit_number = (line_end + PREVIEW_RANGE).to_s.length
+    filename = url.path.split("/")[-1]
+    language = LANGUAGES.values.find { |l| (l[:filenames] || []).include?(filename) || (l[:extensions] || []).any? { |e| filename.end_with?(e) } }&.[](:ace_mode)
+    text = lines.map.with_index(line_start - PREVIEW_RANGE + 1) do |l, i|
+      "#{line_range.include?(i - 1) ? (language ? ">" : "!") : " "} #{i.to_s.rjust(digit_number)}|#{l}"
+    end.join
+    language ||= "diff"
+    message.reply <<~EOS
+                    Showing #{line_start == line_end ? "line #{line_start + 1}" : "lines #{line_start + 1} - #{line_end + 1}"} of `#{filename}`:
+                    ```#{language}
+                    #{text}
+                    ```
+                  EOS
+  end
 end
 
 client.slash("login", all_translations("login.description"), dm_permission: false, default_permission: Discorb::Permission.from_keys(:administrator)) do |interaction|
