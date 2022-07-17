@@ -11,13 +11,11 @@ require_relative "db/models"
 client = Discorb::Client.new
 repositories = Hash.new { |h, k| h[k] = [] }.merge(Repo.all.group_by(&:guild_id))
 pats = Pat.all.to_a.to_h { |pat| [pat.guild_id, pat] }
+I18n::Backend::Simple.include(I18n::Backend::Fallbacks)
 I18n.load_path << Dir["locale/*.yml"]
 I18n.default_locale = :en
+I18n.fallbacks = [:en]
 I18n.enforce_available_locales = false
-
-def tr(text, **options)
-  I18n.t(text, **options, default: nil) || I18n.t(text, locale: :en, **options)
-end
 
 def all_translations(key)
   translations = I18n.available_locales.to_h { |l| [l, I18n.t(key, locale: l, default: nil)] }
@@ -71,19 +69,19 @@ client.slash("login", all_translations("login.description"), dm_permission: fals
   I18n.locale = interaction.locale
   nonce = SecureRandom.hex(16)
   interaction.post(
-    tr("login.prompt"),
+    I18n.t("login.prompt"),
     components: [
       Discorb::Button.new(
-        tr("login.register"),
+        I18n.t("login.register"),
         custom_id: nonce + ":1",
       ),
     ],
     ephemeral: true,
   )
   button_interaction = client.event_lock(:button_click) { |i| i.custom_id == nonce + ":1" }.wait
-  button_interaction.show_modal(tr("login.modal_title"), nonce + ":2", [
+  button_interaction.show_modal(I18n.t("login.modal_title"), nonce + ":2", [
     Discorb::TextInput.new(
-      tr("login.modal_title"),
+      I18n.t("login.modal_title"),
       "pat",
       :short,
       required: true,
@@ -97,12 +95,12 @@ client.slash("login", all_translations("login.description"), dm_permission: fals
   begin
     user = pat.client.user
   rescue Octokit::Unauthorized
-    next interaction.post(tr("login.invalid"), ephemeral: true)
+    next interaction.post(I18n.t("login.invalid"), ephemeral: true)
   end
   Pat.where(guild_id: interaction.guild.id).delete_all
   pat.save
   pats[interaction.guild.id] = pat
-  modal_interaction.post(tr("login.success", login: user.login, name: user.name), ephemeral: true)
+  modal_interaction.post(I18n.t("login.success", login: user.login, name: user.name), ephemeral: true)
 end
 
 client.slash_group "repo", all_translations("repo.description"), default_permission: Discorb::Permission.from_keys(:manage_webhooks), dm_permission: false do |group|
@@ -115,7 +113,7 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
     if repos.empty?
       interaction.edit_original_message(
         embed: Discorb::Embed.new(
-          tr("repo.list.title"), tr("repo.list.no_repos"),
+          I18n.t("repo.list.title"), I18n.t("repo.list.no_repos"),
         ),
       )
       next
@@ -124,24 +122,24 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
     max_pages = (repos.count / 10.0).ceil
     nonce = SecureRandom.hex(16)
 
-    left = Discorb::Button.new(tr("repo.list.left"), :primary, custom_id: nonce + ":left")
-    right = Discorb::Button.new(tr("repo.list.right"), :primary, custom_id: nonce + ":right")
-    stop = Discorb::Button.new(tr("repo.list.stop"), :danger, custom_id: nonce + ":stop")
+    left = Discorb::Button.new(I18n.t("repo.list.left"), :primary, custom_id: nonce + ":left")
+    right = Discorb::Button.new(I18n.t("repo.list.right"), :primary, custom_id: nonce + ":right")
+    stop = Discorb::Button.new(I18n.t("repo.list.stop"), :danger, custom_id: nonce + ":stop")
 
     loop do
       left.disabled = page == 0
       right.disabled = page == max_pages - 1
       interaction.edit_original_message(
         embed: Discorb::Embed.new(
-          tr("repo.list.title"),
-          tr("repo.list.status", count: repos.count, page: page + 1),
+          I18n.t("repo.list.title"),
+          I18n.t("repo.list.status", count: repos.count, page: page + 1),
           fields: repos.offset(page * 10).limit(10).map do |repo|
             Discorb::Embed::Field.new(
               repo.repo,
-              tr(
+              I18n.t(
                 "repo.list.text",
                 prefix: repo.prefix,
-                channel: client.channels[repo.channel_id]&.mention || tr("repo.list.no_channel"),
+                channel: client.channels[repo.channel_id]&.mention || I18n.t("repo.list.no_channel"),
               )
             )
           end,
@@ -191,7 +189,7 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
     prefix ||= "#"
     pat = Pat.find_by(guild_id: interaction.guild.id)
     unless pat
-      interaction.post(tr("repo.add.no_pat"), ephemeral: true)
+      interaction.post(I18n.t("repo.add.no_pat"), ephemeral: true)
       next
     end
     interaction.defer_source(ephemeral: true).wait
@@ -199,24 +197,24 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
     repos.filter! { |r| r.channel_id == channel.id } if channel
 
     unless repos.empty?
-      interaction.post(tr("repo.add.duplicate"), ephemeral: true)
+      interaction.post(I18n.t("repo.add.duplicate"), ephemeral: true)
       next
     end
     begin
       repo = pat.client.repo(repo_name)
     rescue Octokit::Unauthorized
-      interaction.post(tr("common.unauthorized"), ephemeral: true)
+      interaction.post(I18n.t("common.unauthorized"), ephemeral: true)
       next
     rescue Octokit::InvalidRepository
-      interaction.post(tr("repo.add.invalid"), ephemeral: true)
+      interaction.post(I18n.t("repo.add.invalid"), ephemeral: true)
       next
     rescue Octokit::NotFound
-      interaction.post(tr("repo.add.not_found"), ephemeral: true)
+      interaction.post(I18n.t("repo.add.not_found"), ephemeral: true)
       next
     end
     repo = Repo.create(repo: repo.full_name, prefix: prefix, channel_id: channel&.id, guild_id: interaction.guild.id)
     repositories[interaction.guild.id] << repo
-    interaction.post(tr("repo.add.success"), ephemeral: true)
+    interaction.post(I18n.t("repo.add.success"), ephemeral: true)
   end
 
   group.slash(
@@ -232,7 +230,7 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
           )
           repos.limit(25).each.map { |r|
             [
-              "#{r.repo} (#{r.prefix}) @ #{r.channel_id ? "#" + client.channels[r.channel_id].name : tr("repo.list.no_channel")}",
+              "#{r.repo} (#{r.prefix}) @ #{r.channel_id ? "#" + client.channels[r.channel_id].name : I18n.t("repo.list.no_channel")}",
               r.id,
             ]
           }
@@ -246,7 +244,7 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
     next unless repo
 
     repo.destroy
-    interaction.post(tr("repo.remove.success"), ephemeral: true)
+    interaction.post(I18n.t("repo.remove.success"), ephemeral: true)
   end
 end
 
@@ -254,7 +252,7 @@ client.slash_group "info", all_translations("info.description") do |group|
   group.slash "bot", all_translations("info.bot.description"), {} do |interaction|
     I18n.locale = interaction.locale
 
-    interaction.post(tr("info.bot.text"), ephemeral: true)
+    interaction.post(I18n.t("info.bot.text"), ephemeral: true)
   end
 
   group.slash "pat", all_translations("info.pat.description"), {} do |interaction|
@@ -262,7 +260,7 @@ client.slash_group "info", all_translations("info.description") do |group|
 
     pat = Pat.find_by(guild_id: interaction.guild.id)
     unless pat
-      interaction.post(tr("info.no_pat"), ephemeral: true)
+      interaction.post(I18n.t("info.no_pat"), ephemeral: true)
       next
     end
 
@@ -271,7 +269,7 @@ client.slash_group "info", all_translations("info.description") do |group|
     rate_limit = pat.client.rate_limit
 
     interaction.post(
-      tr(
+      I18n.t(
         "info.pat.text",
         discord_user: pat.user_id,
         gh_user: user.name,
