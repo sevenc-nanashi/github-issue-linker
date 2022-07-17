@@ -26,6 +26,16 @@ def all_translations(key)
   translations
 end
 
+%i[standby guild_join guild_leave ready channel_delete].each do |event|
+  client.on event do
+    client.update_presence(
+      Discorb::Activity.new(
+        "#{repositories.values.flatten.count} repositories and #{client.guilds.length} guilds", :watching
+      )
+    )
+  end
+end
+
 client.once :standby do
   puts "Logged in as #{client.user}"
 end
