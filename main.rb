@@ -29,7 +29,11 @@ end
 client.on :standby do
   loop do
     sleep 10
-    update_status
+    client.update_presence(
+      Discorb::Activity.new(
+        "#{repositories.values.flatten.count} repositories and #{client.guilds.length} guilds", :watching
+      )
+    )
   end
 end
 
