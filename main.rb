@@ -49,7 +49,7 @@ client.on(:message) do |message|
   issues = []
   catch :stop do
     channel_repos.each do |repo|
-      message.clean_content.scan(/\b(#{repo.prefix}([0-9]+))/) do |match|
+      message.clean_content.scan(/(#{repo.prefix}([0-9]+))/) do |match|
         begin
           issue = pat.client.issue(repo.repo, match[1])
         rescue Octokit::Unauthorized, Octokit::TooManyRequests
