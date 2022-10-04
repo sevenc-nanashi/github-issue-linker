@@ -282,8 +282,7 @@ client.slash_group "repo", all_translations("repo.description"), default_permiss
         autocomplete: ->(interaction, query) {
           I18n.locale = interaction.locale
           repos = Repo.where(
-            Repo.arel_table[:repo].matches("%#{query}%"),
-            guild_id: interaction.guild.id,
+            "repo like ? and guild_id = ?", "%#{query}%", interaction.guild.id.to_s
           )
           repos.limit(25).each.map { |r|
             [
